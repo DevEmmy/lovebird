@@ -309,7 +309,7 @@ class _CompetitionEntryScreenState extends ConsumerState<CompetitionEntryScreen>
                 padding: const EdgeInsets.only(bottom: 12),
                 child: LBCard(
                   color: Theme.of(context).colorScheme.primaryContainer,
-                  child: Text('${partner!.displayName} already consented to this entry. If you change the text or photos, they\'ll need to consent again.'),
+                  child: Text('${partner.displayName} already consented to this entry. If you change the text or photos, they\'ll need to consent again.'),
                 ),
               ),
             Text('Nothing here is published automatically. Only finalists\' approved details appear publicly, and only if you BOTH allow it.', style: t.bodySmall),

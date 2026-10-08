@@ -39,7 +39,7 @@ class AppShell extends ConsumerWidget {
     final uid = ref.watch(userIdProvider);
     final showBanner = session != null && session.startedBy != uid && session.status == 'inviting';
     final body = Column(children: [
-      if (showBanner) _TogetherInviteBanner(session: session!),
+      if (showBanner) _TogetherInviteBanner(session: session),
       Expanded(
         child: showBanner ? MediaQuery.removePadding(context: context, removeTop: true, child: shell) : shell,
       ),
