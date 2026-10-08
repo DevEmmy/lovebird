@@ -1,0 +1,56 @@
+name: Deploy web demo
+
+# Builds the Flutter web app and publishes it to GitHub Pages.
+# Needs repo variables SUPABASE_URL and SUPABASE_ANON_KEY (Settings → Secrets and variables → Actions → Variables).
+# The anon key is designed to be public; all data access is enforced by RLS in the database.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ vars.SUPABASE_URL != '' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter create --platforms web --org io.lovebird --project-name lovebird . >/dev/null
+      - name: Build
+        run: |
+          flutter build web --release \
+            --base-href "/${{ github.event.repository.name }}/" \
+            --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }} \
+            --dart-define=AUTH_REDIRECT=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ \
+            --dart-define=WEB_ORIGIN=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          cp build/web/index.html build/web/404.html
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: app/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
