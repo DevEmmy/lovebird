@@ -1,0 +1,33 @@
+# Supabase CLI project config (excerpt — `supabase init` fills the rest).
+project_id = "lovebird"
+
+[api]
+max_rows = 500
+
+[auth]
+site_url = "https://lovebird.app"
+additional_redirect_urls = ["io.lovebird.app://login-callback", "http://localhost:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+secure_password_change = true
+
+[auth.rate_limit]
+email_sent = 4
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[auth.password]
+min_length = 10
+password_requirements = "lower_upper_letters_digits"
+
+[functions.ai-assist]
+verify_jwt = true
+[functions.delete-account]
+verify_jwt = true
+[functions.call-token]
+verify_jwt = true
