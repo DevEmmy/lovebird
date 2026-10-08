@@ -19,10 +19,27 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter --version
+      - run: |
+          flutter --version
+          echo "::notice title=Flutter::$(flutter --version | head -1)"
       - run: flutter pub get
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings --write=analysis.txt > /dev/null
+          code=$?
+          # Surface every diagnostic as a GitHub annotation (visible on the run page).
+          grep -E '^\[(error|warning|info)\]' analysis.txt | while IFS= read -r line; do
+            sev=$(echo "$line" | sed -E 's/^\[(\w+)\].*/\1/')
+            loc=$(echo "$line" | sed -E 's/.*\(([^()]*):([0-9]+):([0-9]+)\)$/\1|\2/')
+            file=$(echo "$loc" | cut -d'|' -f1 | sed "s#^$PWD/#app/#")
+            ln=$(echo "$loc" | cut -d'|' -f2)
+            msg=$(echo "$line" | sed -E 's/^\[\w+\] //; s/ \([^()]*:[0-9]+:[0-9]+\)$//')
+            [ "$sev" = info ] && sev=notice
+            echo "::$sev file=$file,line=$ln::$msg"
+          done
+          echo "::notice title=Analyzer::$(grep -cE '^\[error\]' analysis.txt) errors, $(grep -cE '^\[warning\]' analysis.txt) warnings, $(grep -cE '^\[info\]' analysis.txt) infos"
+          exit $code
       - name: Unit tests
         run: flutter test
       - name: Web build (compile check)
