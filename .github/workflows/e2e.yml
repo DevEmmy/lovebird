@@ -26,7 +26,7 @@ jobs:
       - name: Walk through sign-up on the live site
         env:
           TEST_EMAIL: eolaosebikan60+lovebird${{ github.run_number }}@gmail.com
-        run: node e2e/signup.mjs || true
+        run: LANG=en_US.UTF-8 node e2e/signup.mjs || true
       - name: Publish results
         if: always()
         run: |

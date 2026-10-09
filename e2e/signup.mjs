@@ -13,7 +13,7 @@ const report = { base: BASE, steps: [], console: [], failedRequests: [], supabas
 const step = (s) => { console.log('STEP', s); report.steps.push(s); };
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1, locale: 'en-US', timezoneId: 'Africa/Lagos' });
 page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) report.console.push(`${m.type()}: ${m.text()}`.slice(0, 600)); });
 page.on('pageerror', (e) => report.console.push('pageerror: ' + String(e.stack || e).slice(0, 4000)));
 page.on('requestfailed', (r) => report.failedRequests.push(`${r.url().slice(0, 160)} ${r.failure()?.errorText}`));
@@ -98,6 +98,13 @@ try {
   await enableSemantics();
   await snap('after-submit');
   report.afterSubmitText = (await page.locator('flt-semantics-host, body').first().innerText().catch(() => '')).slice(0, 1500);
+
+  step('create love circle');
+  await tapText(/Create Love Circle/i);
+  await wait(6000);
+  await enableSemantics();
+  await snap('after-create-circle');
+  report.afterCircleText = (await page.locator('flt-semantics-host, body').first().innerText().catch(() => '')).slice(0, 1500);
 
   step('done');
 } catch (e) {
