@@ -25,13 +25,14 @@ jobs:
           TEST_EMAIL: eolaosebikan60+lovebird${{ github.run_number }}@gmail.com
         run: node e2e/signup.mjs || true
       - name: Publish results
+        if: always()
         run: |
-          cp -r e2e/out /tmp/out
+          set -x
+          ls -la e2e/out || mkdir -p e2e/out
+          cd e2e/out
+          git init -q -b e2e-results
           git config user.name "lovebird-ci"
           git config user.email "ci@users.noreply.github.com"
-          git checkout --orphan e2e-results
-          git rm -rq .
-          cp -r /tmp/out/* .
           git add -A
           git commit -qm "Live site check #${{ github.run_number }}"
-          git push -f origin e2e-results
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" e2e-results
