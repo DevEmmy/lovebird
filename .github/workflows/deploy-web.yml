@@ -1,12 +1,16 @@
 name: Deploy web demo
 
 # Builds the Flutter web app and publishes it to GitHub Pages.
-# Needs repo variables SUPABASE_URL and SUPABASE_ANON_KEY (Settings → Secrets and variables → Actions → Variables).
-# The anon key is designed to be public; all data access is enforced by RLS in the database.
+# Supabase URL + publishable (anon) key. These are public by design — every request is
+# still checked by row-level security in the database. Repo variables, if set, override these.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+env:
+  SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://yktovfpxclhbwcoaauny.supabase.co' }}
+  SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || 'sb_publishable_-xcYlVha_7X3pABYW2nS4A_2UKcoWiv' }}
 
 permissions:
   contents: read
@@ -19,13 +23,17 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ vars.SUPABASE_URL != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: app
     steps:
       - uses: actions/checkout@v5
+      - name: Check the database is set up
+        run: |
+          code=$(curl -s -o body.json -w '%{http_code}' "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" -H "apikey: $SUPABASE_ANON_KEY")
+          echo "::notice title=Database check::HTTP $code $(head -c 200 body.json)"
+          if [ "$code" != "200" ]; then echo "::error title=Database not ready::Run supabase/setup_all.sql in the Supabase SQL Editor"; fi
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -36,8 +44,8 @@ jobs:
         run: |
           flutter build web --release \
             --base-href "/${{ github.event.repository.name }}/" \
-            --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }} \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
             --dart-define=AUTH_REDIRECT=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ \
             --dart-define=WEB_ORIGIN=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           cp build/web/index.html build/web/404.html
