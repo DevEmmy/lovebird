@@ -235,17 +235,17 @@ class CallManager extends ChangeNotifier {
         await _createPeer();
         final offer = await _pc!.createOffer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': video ? 1 : 0});
         await _pc!.setLocalDescription(offer);
-        _send('offer', {'sdp': offer.sdp, 'type': offer.type});
+        _send('offer', {'sdp': offer.sdp, 'sdpType': offer.type});
       case 'offer':
         if (cid != _callId || _pc == null) return;
-        await _pc!.setRemoteDescription(RTCSessionDescription(m['sdp'] as String?, m['type'] as String?));
+        await _pc!.setRemoteDescription(RTCSessionDescription(m['sdp'] as String?, m['sdpType'] as String?));
         await _flushIce();
         final answer = await _pc!.createAnswer({'offerToReceiveAudio': 1, 'offerToReceiveVideo': video ? 1 : 0});
         await _pc!.setLocalDescription(answer);
-        _send('answer', {'sdp': answer.sdp, 'type': answer.type});
+        _send('answer', {'sdp': answer.sdp, 'sdpType': answer.type});
       case 'answer':
         if (cid != _callId || _pc == null) return;
-        await _pc!.setRemoteDescription(RTCSessionDescription(m['sdp'] as String?, m['type'] as String?));
+        await _pc!.setRemoteDescription(RTCSessionDescription(m['sdp'] as String?, m['sdpType'] as String?));
         await _flushIce();
       case 'ice':
         if (cid != _callId) return;

@@ -23,8 +23,12 @@ class CircleChannel {
         event: event,
         callback: (raw) {
           // Payload shape differs slightly across client versions; normalise.
+          // App data travels under its own key ("d") so fields like `type`
+          // can never collide with the realtime envelope.
           final inner = raw['payload'];
-          final data = inner is Map ? Map<String, dynamic>.from(inner) : Map<String, dynamic>.from(raw);
+          final body = (inner is Map && inner['d'] is Map) ? inner['d'] : raw['d'];
+          if (body is! Map) return;
+          final data = Map<String, dynamic>.from(body);
           if (data['from'] == userId) return; // ignore our own echoes
           _controllers[event]?.add(data);
         },
@@ -61,7 +65,7 @@ class CircleChannel {
 
   Future<void> send(String event, Map<String, dynamic> payload) async {
     try {
-      await _channel.sendBroadcastMessage(event: event, payload: {...payload, 'from': userId});
+      await _channel.sendBroadcastMessage(event: event, payload: {'d': {...payload, 'from': userId}});
     } catch (e) {
       debugPrint('broadcast failed: $e');
     }
