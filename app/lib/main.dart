@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,6 +11,8 @@ import 'core/theme/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Keep the browser address bar in sync with opened screens (refresh-safe, shareable).
+  GoRouter.optionURLReflectsImperativeAPIs = true;
   // Some browsers report locales intl can't parse (e.g. "en-US@posix"); never let that block startup.
   try {
     Intl.defaultLocale = Intl.canonicalizedLocale(Intl.getCurrentLocale());

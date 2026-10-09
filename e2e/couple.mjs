@@ -105,14 +105,14 @@ try {
   await wait(A, 7000);
   await tap(A, /Tic-Tac-Love/i);
   await wait(A, 4000);
-  const gameUrl = A.url();
-  report.gameUrl = gameUrl;
-  step('B sees invite / opens game');
+  report.gameUrl = A.url();
+  step('B taps Join on the invite banner');
+  await wait(B, 2000);
   await semantics(B);
   report.bInvite = (await text(B)).includes('wants to play');
   await snap(B, 'B-invite-banner');
-  await B.goto(gameUrl, { waitUntil: 'load' });
-  await wait(B, 8000);
+  await tap(B, /^Join$/);
+  await wait(B, 6000);
   step('A plays centre square');
   await tap(A, /Empty square 5/i);
   await wait(A, 3000);
@@ -131,11 +131,12 @@ try {
   step('Love Pong');
   await A.goto(BASE + '#/games', { waitUntil: 'load' });
   await wait(A, 7000);
+  await B.goto(BASE + '#/home', { waitUntil: 'load' });
+  await wait(B, 7000);
   await tap(A, /Love Pong/i);
-  await wait(A, 4000);
-  const pongUrl = A.url();
-  await B.goto(pongUrl, { waitUntil: 'load' });
-  await wait(B, 9000);
+  await wait(B, 4000);
+  await tap(B, /^Join$/);
+  await wait(B, 7000);
   // move B's paddle around a bit
   const box = await B.locator('flt-glass-pane, flutter-view').first().boundingBox().catch(() => null);
   if (box) {
