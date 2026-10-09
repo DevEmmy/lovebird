@@ -36,7 +36,13 @@ const wait = (p, ms) => p.waitForTimeout(ms);
 const semantics = async (p) => { await p.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click()); await wait(p, 600); };
 const tap = async (p, re, timeout = 10000) => { await semantics(p); await p.getByRole('button', { name: re }).or(p.getByText(re)).first().click({ timeout }); };
 const typeInto = async (p, re, text) => { await p.getByRole('textbox', { name: re }).first().click({ timeout: 10000 }); await wait(p, 200); await p.keyboard.type(text, { delay: 10 }); };
-const text = async (p) => (await p.locator('flt-semantics-host').first().innerText().catch(() => '')) || '';
+// Visible text plus accessibility labels (Flutter puts many labels in aria-label).
+const text = async (p) => p.evaluate(() => {
+  const host = document.querySelector('flt-semantics-host');
+  if (!host) return '';
+  const labels = [...host.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label'));
+  return host.innerText + ' | ' + labels.join(' | ');
+}).catch(() => '');
 
 async function signUp(p, name, email) {
   await p.goto(BASE, { waitUntil: 'load', timeout: 60000 });
