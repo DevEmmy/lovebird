@@ -10,6 +10,7 @@ import '../../core/widgets/widgets.dart';
 import '../../data/models.dart';
 import '../../data/together_repo.dart';
 import '../../state/session.dart';
+import 'internet_archive.dart';
 import 'movie_catalog.dart';
 
 final _recentMoviesProvider = FutureProvider.autoDispose<List<MovieSession>>((ref) async {
@@ -131,7 +132,8 @@ class _MovieLobbyScreenState extends ConsumerState<MovieLobbyScreen> {
                   ),
                 ),
             ],
-            const SectionHeader('Free to watch together'),
+            const _ArchiveBrowser(),
+            const SectionHeader('Short films'),
             LayoutBuilder(builder: (context, c) {
               final cols = c.maxWidth > 700 ? 4 : 2;
               return GridView.count(
@@ -186,6 +188,193 @@ class _MovieLobbyScreenState extends ConsumerState<MovieLobbyScreen> {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+
+/// Search & browse thousands of legal public-domain feature films.
+class _ArchiveBrowser extends ConsumerStatefulWidget {
+  const _ArchiveBrowser();
+  @override
+  ConsumerState<_ArchiveBrowser> createState() => _ArchiveBrowserState();
+}
+
+class _ArchiveBrowserState extends ConsumerState<_ArchiveBrowser> {
+  final _q = TextEditingController();
+  String _genre = 'Most watched';
+  Future<List<ArchiveFilm>>? _results;
+  String? _opening;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() => setState(() => _results = InternetArchive.search(query: _q.text, genre: InternetArchive.genres[_genre] ?? ''));
+
+  Future<void> _watch(ArchiveFilm f) async {
+    setState(() => _opening = f.id);
+    try {
+      final url = await InternetArchive.playableUrl(f.id);
+      if (url == null) {
+        if (mounted) showToast(context, 'That film has no playable copy. Try another one.');
+        return;
+      }
+      final cid = ref.read(circleIdProvider);
+      final row = await sb
+          .from('movie_sessions')
+          .insert({
+            'circle_id': cid,
+            'title': f.year == null ? f.title : '${f.title} (${f.year})',
+            'source_url': url,
+            'source_kind': 'catalog',
+            'catalog_id': 'ia:${f.id}',
+            'created_by': requireUserId(),
+          })
+          .select('id')
+          .single();
+      final id = row['id'] as String;
+      await TogetherRepo.start(circleId: cid, activity: 'watch', refType: 'movie', refId: id, title: '🎬 ${f.title}');
+      if (mounted) context.push('/movie/$id');
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _opening = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SectionHeader('Classic movies'),
+      Text('Thousands of full-length films that are free and legal to watch, from the Internet Archive\'s public-domain collection.', style: t.bodySmall),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _q,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => _load(),
+        decoration: InputDecoration(
+          hintText: 'Search films, actors, genres…',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(tooltip: 'Search', icon: const Icon(Icons.arrow_forward), onPressed: _load),
+        ),
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 40,
+        child: ListView(scrollDirection: Axis.horizontal, children: [
+          for (final g in InternetArchive.genres.keys)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                label: Text(g),
+                selected: _genre == g,
+                onSelected: (_) {
+                  _genre = g;
+                  _load();
+                },
+              ),
+            ),
+        ]),
+      ),
+      const SizedBox(height: 12),
+      FutureBuilder<List<ArchiveFilm>>(
+        future: _results,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) return const SizedBox(height: 220, child: LoadingView(label: 'Finding films…'));
+          if (snap.hasError) return ErrorView(error: snap.error!, onRetry: _load);
+          final films = snap.data ?? const [];
+          if (films.isEmpty) return const EmptyState(emoji: '🎞️', title: 'No films found', message: 'Try another search or genre.');
+          return LayoutBuilder(builder: (context, c) {
+            final cols = c.maxWidth > 900 ? 5 : (c.maxWidth > 600 ? 4 : 3);
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: 10, mainAxisSpacing: 14, childAspectRatio: 0.52),
+              itemCount: films.length,
+              itemBuilder: (context, i) {
+                final f = films[i];
+                return Semantics(
+                  button: true,
+                  label: 'Watch ${f.title}${f.year != null ? ', ${f.year}' : ''}',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _opening != null ? null : () => _showDetails(f),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Stack(fit: StackFit.expand, children: [
+                            Image.network(
+                              f.posterUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                decoration: const BoxDecoration(gradient: LBColors.heroGradient),
+                                alignment: Alignment.center,
+                                child: const Text('🎬', style: TextStyle(fontSize: 34)),
+                              ),
+                            ),
+                            if (_opening == f.id) const ColoredBox(color: Color(0x88000000), child: Center(child: CircularProgressIndicator(color: Colors.white))),
+                          ]),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(f.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: t.titleSmall),
+                      if (f.year != null) Text(f.year!, style: t.bodySmall),
+                    ]),
+                  ),
+                );
+              },
+            );
+          });
+        },
+      ),
+    ]);
+  }
+
+  void _showDetails(ArchiveFilm f) {
+    final t = Theme.of(context).textTheme;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(f.posterUrl, width: 90, height: 130, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox(width: 90, height: 130))),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(f.title, style: t.titleLarge),
+                  if (f.year != null) Text(f.year!, style: t.bodyMedium),
+                  const SizedBox(height: 6),
+                  const PillTag('Public domain · Internet Archive'),
+                ]),
+              ),
+            ]),
+            if (f.description != null && f.description!.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 180),
+                child: SingleChildScrollView(child: Text(f.description!, style: t.bodyMedium)),
+              ),
+            ],
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _watch(f);
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Watch together'),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }

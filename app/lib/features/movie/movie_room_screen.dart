@@ -53,7 +53,6 @@ class _MovieRoomScreenState extends ConsumerState<MovieRoomScreen> {
   bool _showChat = true;
   bool _ended = false;
   double? _scrub;
-  final _call = CallController();
   final _floating = <(int, String)>[];
   int _floatId = 0;
 
@@ -105,7 +104,6 @@ class _MovieRoomScreenState extends ConsumerState<MovieRoomScreen> {
     _persistDebounce?.cancel();
     _player?.removeListener(_onTick);
     _player?.dispose();
-    _call.dispose();
     _channel?.setActivity(null);
     super.dispose();
   }
@@ -271,7 +269,6 @@ class _MovieRoomScreenState extends ConsumerState<MovieRoomScreen> {
               child: Text(f.$2, style: const TextStyle(fontSize: 34)),
             ),
           ),
-        Positioned(top: 8, right: 8, child: CallVideoTiles(controller: _call)),
       ]),
       Material(
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -319,6 +316,8 @@ class _MovieRoomScreenState extends ConsumerState<MovieRoomScreen> {
                 ),
             ]),
             if (film != null) Text(film.attribution, style: Theme.of(context).textTheme.bodySmall),
+            if (s.catalogId?.startsWith('ia:') ?? false)
+              Text('Public domain · courtesy of the Internet Archive', style: Theme.of(context).textTheme.bodySmall),
           ]),
         ),
       ),
@@ -330,7 +329,7 @@ class _MovieRoomScreenState extends ConsumerState<MovieRoomScreen> {
       appBar: AppBar(
         title: Text(s.title, overflow: TextOverflow.ellipsis),
         actions: [
-          CallBar(controller: _call, partnerName: partnerName, compact: !wide),
+          CallBar(compact: !wide),
           IconButton(
             tooltip: 'Save to Our Diary',
             icon: const Icon(Icons.auto_stories_outlined),

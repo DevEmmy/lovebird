@@ -35,7 +35,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   final _focus = FocusNode();
   final _scroll = ScrollController();
   final _voice = VoiceRecorderController();
-  final _call = CallController();
   Message? _replyTo;
   bool _partnerTyping = false;
   Timer? _typingTimer;
@@ -64,7 +63,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     _recordTicker?.cancel();
     _readDebounce?.cancel();
     _voice.dispose();
-    _call.dispose();
     _text.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -376,7 +374,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
                         ]);
                       },
                     ),
-              actions: [CallBar(controller: _call, partnerName: partner?.displayName ?? 'your partner'), const SizedBox(width: 4)],
+              actions: const [CallBar(), SizedBox(width: 4)],
             ),
       body: Stack(children: [
         Column(children: [
@@ -403,7 +401,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
             onCancelRecording: _cancelRecording,
           ),
         ]),
-        if (!widget.embedded) Positioned(top: 8, right: 8, child: CallVideoTiles(controller: _call)),
       ]),
     );
   }

@@ -12,6 +12,7 @@ import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../state/circle_channel.dart';
 import '../../state/session.dart';
+import '../arcade/arcade.dart';
 import '../diary/diary_repo.dart';
 import '../diary/moment_suggester.dart';
 import 'game_engine.dart';
@@ -137,6 +138,7 @@ class _GameSessionScreenState extends ConsumerState<GameSessionScreen> {
       error: (e, _) => Scaffold(appBar: AppBar(), body: ErrorView(error: e, onRetry: () => ref.invalidate(_sessionStream(widget.sessionId)))),
       data: (s) {
         if (s == null) return Scaffold(appBar: AppBar(), body: const ErrorView(error: 'not found'));
+        if (ArcadeCatalog.byKey(s.gameKey) != null) return ArcadeView(session: s);
         final game = GameCatalog.byKey(s.gameKey);
         if (game == null) return Scaffold(appBar: AppBar(), body: const ErrorView(error: 'unknown game'));
         return Scaffold(

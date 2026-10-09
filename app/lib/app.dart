@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router.dart';
 import 'core/theme/theme.dart';
+import 'features/calls/call_sheet.dart';
 
 class LovebirdApp extends ConsumerWidget {
   const LovebirdApp({super.key});
@@ -22,7 +23,10 @@ class LovebirdApp extends ConsumerWidget {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: mq.textScaler.clamp(minScaleFactor: 0.9, maxScaleFactor: 1.6)),
-          child: child ?? const SizedBox.shrink(),
+          child: Stack(fit: StackFit.expand, children: [
+            child ?? const SizedBox.shrink(),
+            const CallOverlay(),
+          ]),
         );
       },
     );

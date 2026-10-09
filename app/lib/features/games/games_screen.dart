@@ -7,6 +7,7 @@ import '../../core/utils/format.dart';
 import '../../core/widgets/widgets.dart';
 import '../../data/providers.dart';
 import '../../state/session.dart';
+import '../arcade/arcade.dart';
 import 'game_engine.dart';
 
 class GamesScreen extends ConsumerStatefulWidget {
@@ -37,13 +38,33 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
     }
   }
 
+  Future<void> _startArcade(ArcadeGame g) async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      final id = await ArcadeRepo.start(
+        circleId: ref.read(circleIdProvider),
+        game: g,
+        partnerId: ref.read(partnerProvider).valueOrNull?.id,
+      );
+      ref.invalidate(gameHistoryProvider);
+      if (mounted) context.push('/game/$id');
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final key = GoRouterState.of(context).uri.queryParameters['key'];
     if (key != null && !_autoStarted) {
       _autoStarted = true;
       final g = GameCatalog.byKey(key);
+      final a = ArcadeCatalog.byKey(key);
       if (g != null) WidgetsBinding.instance.addPostFrameCallback((_) => _start(g));
+      if (a != null) WidgetsBinding.instance.addPostFrameCallback((_) => _startArcade(a));
     }
     final history = ref.watch(gameHistoryProvider).valueOrNull ?? const [];
     final active = history.where((s) => s.active).toList();
@@ -58,18 +79,18 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               if (active.isNotEmpty) ...[
                 const SectionHeader('Pick up where you left off'),
-                for (final s in active.take(3))
+                for (final s in active.take(4))
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: LBCard(
                       onTap: () => context.push('/game/${s.id}'),
                       child: Row(children: [
-                        Text(GameCatalog.byKey(s.gameKey)?.emoji ?? '🎮', style: const TextStyle(fontSize: 26)),
+                        Text(GameCatalog.byKey(s.gameKey)?.emoji ?? ArcadeCatalog.byKey(s.gameKey)?.emoji ?? '🎮', style: const TextStyle(fontSize: 26)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(GameCatalog.byKey(s.gameKey)?.title ?? 'Game', style: t.titleSmall),
-                            Text('Round ${s.round} of ${s.totalRounds} · ${Fmt.relative(s.createdAt)}', style: t.bodySmall),
+                            Text(GameCatalog.byKey(s.gameKey)?.title ?? ArcadeCatalog.byKey(s.gameKey)?.title ?? 'Game', style: t.titleSmall),
+                            Text(ArcadeCatalog.byKey(s.gameKey) != null ? 'Arcade · ${Fmt.relative(s.updatedAt)}' : 'Round ${s.round} of ${s.totalRounds} · ${Fmt.relative(s.createdAt)}', style: t.bodySmall),
                           ]),
                         ),
                         const Text('Resume'),
@@ -78,7 +99,9 @@ class _GamesScreenState extends ConsumerState<GamesScreen> {
                     ),
                   ),
               ],
-              const SectionHeader('Games for two'),
+              const SectionHeader('Arcade — play live together'),
+              ArcadeGrid(onStart: _startArcade, busy: _starting),
+              const SectionHeader('Question games'),
               LayoutBuilder(builder: (context, c) {
                 final cols = c.maxWidth > 700 ? 3 : 2;
                 return GridView.count(

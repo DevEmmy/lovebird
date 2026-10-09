@@ -415,7 +415,9 @@ class GameSession {
     required this.scores,
     this.startedBy,
     required this.createdAt,
-  });
+    DateTime? updatedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+  final DateTime updatedAt;
   final String id;
   final String circleId;
   final String gameKey;
@@ -442,6 +444,7 @@ class GameSession {
         scores: _map(j['scores']),
         startedBy: j['started_by'] as String?,
         createdAt: _dtReq(j['created_at']),
+        updatedAt: _dt(j['updated_at']),
       );
 }
 

@@ -41,7 +41,7 @@ class CircleChannel {
     });
   }
 
-  static const events = ['typing', 'together', 'movie', 'game', 'reaction', 'date_step', 'reading', 'nudge'];
+  static const events = ['typing', 'together', 'movie', 'game', 'reaction', 'date_step', 'reading', 'nudge', 'arcade', 'call'];
 
   final String circleId;
   final String userId;
