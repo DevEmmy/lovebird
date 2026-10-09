@@ -204,4 +204,4 @@ try {
 }
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 await browser.close();
-// rerun4 signal-logging
+// rerun5 signal-logging
