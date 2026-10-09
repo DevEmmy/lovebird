@@ -37,6 +37,10 @@ const semantics = async (p) => { await p.evaluate(() => document.querySelector('
 const tap = async (p, re, timeout = 10000) => { await semantics(p); await p.getByRole('button', { name: re }).or(p.getByText(re)).first().click({ timeout }); };
 const typeInto = async (p, re, text) => { await p.getByRole('textbox', { name: re }).first().click({ timeout: 10000 }); await wait(p, 200); await p.keyboard.type(text, { delay: 10 }); };
 // Visible text plus accessibility labels (Flutter puts many labels in aria-label).
+// Tap the invite banner's Join button (top-right of the screen).
+const tapJoin = async (p) => {
+  try { await tap(p, /^Join$/, 3000); } catch { await p.mouse.click(367, 31); }
+};
 const text = async (p) => p.evaluate(() => {
   const host = document.querySelector('flt-semantics-host');
   if (!host) return '';
@@ -111,7 +115,7 @@ try {
   await semantics(B);
   report.bInvite = (await text(B)).includes('wants to play');
   await snap(B, 'B-invite-banner');
-  await tap(B, /^Join$/);
+  await tapJoin(B);
   await wait(B, 6000);
   step('A plays centre square');
   await tap(A, /Empty square 5/i);
@@ -135,7 +139,7 @@ try {
   await wait(B, 7000);
   await tap(A, /Love Pong/i);
   await wait(B, 4000);
-  await tap(B, /^Join$/);
+  await tapJoin(B);
   await wait(B, 7000);
   // move B's paddle around a bit
   const box = await B.locator('flt-glass-pane, flutter-view').first().boundingBox().catch(() => null);
@@ -176,4 +180,4 @@ try {
 }
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 await browser.close();
-// rerun 1791533584
+// rerun2 1791533584
