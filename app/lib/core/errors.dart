@@ -15,6 +15,9 @@ String friendlyError(Object error) {
     if (m.contains('email not confirmed')) return 'Please confirm your email first — check your inbox.';
     if (m.contains('already registered')) return 'An account with this email already exists.';
     if (m.contains('password')) return error.message;
+    if (m.contains('email rate limit')) {
+      return 'Lovebird can\'t send sign-up emails right now (hourly limit reached). Please try again later.';
+    }
     if (m.contains('rate limit')) return 'Too many tries. Please wait a minute.';
     if (m.contains('jwt') || m.contains('session')) return 'Your session expired. Please sign in again.';
     return error.message;
