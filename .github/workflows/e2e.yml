@@ -4,6 +4,9 @@ name: Live site check
 # screenshots + a report to the `e2e-results` branch.
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy web demo"]
+    types: [completed]
   push:
     branches: [main]
     paths: ['e2e/**', '.github/workflows/e2e.yml']

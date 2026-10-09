@@ -251,15 +251,17 @@ create index join_attempts_user_time on public.join_attempts (user_id, attempted
 
 -- Unambiguous alphabet (no 0/O/1/I).
 create or replace function public.gen_invite_code()
-returns text language plpgsql volatile as $$
+returns text language plpgsql volatile set search_path = public, pg_catalog as $$
 declare
   alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  bytes bytea := gen_random_bytes(8);
+  -- bytes 0-5 and 10-11 of a v4 UUID are fully random (others carry version/variant bits)
+  raw bytea := decode(replace(gen_random_uuid()::text, '-', ''), 'hex');
+  idx int[] := array[0, 1, 2, 3, 4, 5, 10, 11];
   out text := '';
   i int;
 begin
-  for i in 0..7 loop
-    out := out || substr(alphabet, (get_byte(bytes, i) % 32) + 1, 1);
+  foreach i in array idx loop
+    out := out || substr(alphabet, (get_byte(raw, i) % 32) + 1, 1);
   end loop;
   return out;
 end $$;
@@ -2171,4 +2173,24 @@ Be specific. Be ridiculous if you want to. This one is supposed to be fun.$t$),
   (b, 4, 'When It Was Hard', $t$Write about a moment in your relationship that was difficult — and what your partner did, or didn't do, that helped you through it.
 
 Be honest and be kind. The goal isn't to reopen anything. It's to say: I saw what you did, and it mattered.$t$);
+end $$;
+
+-- ===== migrations/20261009000600_fix_invite_codes.sql =====
+-- Fix: invite codes used pgcrypto's gen_random_bytes(), which Supabase installs in the
+-- `extensions` schema (not on our functions' search_path), so create_circle failed.
+-- Use gen_random_uuid() (built into Postgres 13+) as the randomness source instead.
+create or replace function public.gen_invite_code()
+returns text language plpgsql volatile set search_path = public, pg_catalog as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  -- bytes 0-5 and 10-11 of a v4 UUID are fully random (others carry version/variant bits)
+  raw bytea := decode(replace(gen_random_uuid()::text, '-', ''), 'hex');
+  idx int[] := array[0, 1, 2, 3, 4, 5, 10, 11];
+  out text := '';
+  i int;
+begin
+  foreach i in array idx loop
+    out := out || substr(alphabet, (get_byte(raw, i) % 32) + 1, 1);
+  end loop;
+  return out;
 end $$;

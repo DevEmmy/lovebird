@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
@@ -9,7 +10,14 @@ import 'core/theme/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting();
+  // Some browsers report locales intl can't parse (e.g. "en-US@posix"); never let that block startup.
+  try {
+    Intl.defaultLocale = Intl.canonicalizedLocale(Intl.getCurrentLocale());
+    await initializeDateFormatting(Intl.defaultLocale);
+  } catch (_) {
+    Intl.defaultLocale = 'en_US';
+    await initializeDateFormatting('en_US');
+  }
 
   if (!AppConfig.isConfigured) {
     runApp(const _MissingConfigApp());

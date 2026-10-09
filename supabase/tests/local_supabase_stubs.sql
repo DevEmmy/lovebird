@@ -5,6 +5,10 @@ do $r$ begin create role anon nologin; exception when duplicate_object then null
 do $r$ begin create role authenticated nologin; exception when duplicate_object then null; end $r$;
 do $r$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $r$;
 
+-- Like Supabase: extensions live in their own schema, NOT on public's search_path.
+create schema if not exists extensions;
+create extension if not exists pgcrypto schema extensions;
+
 create schema auth;
 create table auth.users (
   id uuid primary key default gen_random_uuid(),

@@ -247,15 +247,17 @@ create index join_attempts_user_time on public.join_attempts (user_id, attempted
 
 -- Unambiguous alphabet (no 0/O/1/I).
 create or replace function public.gen_invite_code()
-returns text language plpgsql volatile as $$
+returns text language plpgsql volatile set search_path = public, pg_catalog as $$
 declare
   alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  bytes bytea := gen_random_bytes(8);
+  -- bytes 0-5 and 10-11 of a v4 UUID are fully random (others carry version/variant bits)
+  raw bytea := decode(replace(gen_random_uuid()::text, '-', ''), 'hex');
+  idx int[] := array[0, 1, 2, 3, 4, 5, 10, 11];
   out text := '';
   i int;
 begin
-  for i in 0..7 loop
-    out := out || substr(alphabet, (get_byte(bytes, i) % 32) + 1, 1);
+  foreach i in array idx loop
+    out := out || substr(alphabet, (get_byte(raw, i) % 32) + 1, 1);
   end loop;
   return out;
 end $$;
