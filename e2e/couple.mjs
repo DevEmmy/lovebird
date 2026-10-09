@@ -70,7 +70,10 @@ try {
   await tap(A, /Create Love Circle/i);
   await wait(A, 5000);
   await semantics(A);
-  const code = ((await text(A)).match(/\b[A-HJ-NP-Z2-9]{8}\b/) || [])[0];
+  const t = await text(A);
+  const spaced = t.match(/Invitation code ((?:[A-Z0-9] ){7}[A-Z0-9])/);
+  const code = spaced ? spaced[1].replace(/ /g, '') : (t.match(/\b[A-HJ-NP-Z2-9]{8}\b/) || [])[0];
+  report.waitingText = t.slice(0, 300);
   report.code = code;
   await snap(A, 'A-waiting');
   if (!code) throw new Error('No invite code shown');
