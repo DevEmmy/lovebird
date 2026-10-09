@@ -4,9 +4,6 @@ name: Live site check
 # screenshots + a report to the `e2e-results` branch.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Deploy web demo"]
-    types: [completed]
   push:
     branches: [main]
     paths: ['e2e/**', '.github/workflows/e2e.yml']
@@ -23,10 +20,10 @@ jobs:
         with:
           node-version: 22
       - run: npm init -y >/dev/null && npm i playwright@1.55.0 >/dev/null && npx playwright install --with-deps chromium >/dev/null
-      - name: Walk through sign-up on the live site
+      - name: Two-person test on the live site (sign up, join, play, call)
         env:
-          TEST_EMAIL: eolaosebikan60+lovebird${{ github.run_number }}@gmail.com
-        run: LANG=en_US.UTF-8 node e2e/signup.mjs || true
+          RUN_ID: ${{ github.run_number }}
+        run: LANG=en_US.UTF-8 node e2e/couple.mjs || true
       - name: Publish results
         if: always()
         run: |
