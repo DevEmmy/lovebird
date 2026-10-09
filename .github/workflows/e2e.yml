@@ -1,0 +1,37 @@
+name: Live site check
+
+# Opens the deployed app in a real browser, walks through sign-up, and commits
+# screenshots + a report to the `e2e-results` branch.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['e2e/**', '.github/workflows/e2e.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  signup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm init -y >/dev/null && npm i playwright@1.55.0 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+      - name: Walk through sign-up on the live site
+        env:
+          TEST_EMAIL: eolaosebikan60+lovebird${{ github.run_number }}@gmail.com
+        run: node e2e/signup.mjs || true
+      - name: Publish results
+        run: |
+          cp -r e2e/out /tmp/out
+          git config user.name "lovebird-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan e2e-results
+          git rm -rq .
+          cp -r /tmp/out/* .
+          git add -A
+          git commit -qm "Live site check #${{ github.run_number }}"
+          git push -f origin e2e-results
