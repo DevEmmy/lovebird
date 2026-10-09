@@ -20,7 +20,10 @@ enum CallPhase { idle, outgoing, incoming, connecting, connected }
 
 class CallManager extends ChangeNotifier {
   CallManager(this._channel, this.myId) {
-    _sub = _channel.on('call').listen(_onSignal);
+    // Signals are handled one at a time, in order (offer before its ICE, etc.).
+    _sub = _channel.on('call').listen((m) {
+      _queue = _queue.then((_) => _safeSignal(m));
+    });
   }
 
   final CircleChannel _channel;
@@ -50,6 +53,16 @@ class CallManager extends ChangeNotifier {
   Timer? _dropTimer;
 
   bool _disposed = false;
+  Future<void> _queue = Future.value();
+
+  Future<void> _safeSignal(Map<String, dynamic> m) async {
+    try {
+      await _onSignal(m);
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[call] ${m['t']} failed: $e\n$st');
+    }
+  }
 
   @override
   void notifyListeners() {
@@ -122,7 +135,13 @@ class CallManager extends ChangeNotifier {
       _finish(notice: 'Allow microphone${video ? ' and camera' : ''} access to answer.');
       return;
     }
-    await _createPeer();
+    try {
+      await _createPeer();
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[call] accept/createPeer failed: $e\n$st');
+      rethrow;
+    }
     _send('accept');
   }
 
@@ -180,6 +199,10 @@ class CallManager extends ChangeNotifier {
   Future<void> _onSignal(Map<String, dynamic> m) async {
     final t = m['t'] as String?;
     final cid = m['cid'] as String?;
+    if (t != 'ice' && t != 'ring') {
+      // ignore: avoid_print
+      print('[call] <- $t (phase ${phase.name}, pc ${_pc != null})');
+    }
     switch (t) {
       case 'ring':
         if (phase == CallPhase.idle) {

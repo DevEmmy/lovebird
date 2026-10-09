@@ -37,7 +37,7 @@ async function person(tag) {
     Object.setPrototypeOf(window.RTCPeerConnection, Orig);
   });
   const page = await ctx.newPage();
-  page.on('console', (m) => { if (m.type() === 'error') report.console[tag].push(m.text().slice(0, 300)); });
+  page.on('console', (m) => { if (m.type() === 'error' || m.text().startsWith('[call]')) report.console[tag].push(m.text().slice(0, 1500)); });
   page.on('pageerror', (e) => report.console[tag].push('pageerror: ' + String(e.stack || e).slice(0, 1200)));
   page.on('response', async (r) => {
     if (r.url().includes('supabase.co') && r.status() >= 400) {
@@ -204,4 +204,4 @@ try {
 }
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 await browser.close();
-// rerun3 rtc-instrumented
+// rerun4 signal-logging
