@@ -58,6 +58,17 @@ try {
   report.bootstrap = await page.evaluate(async () => (await (await fetch('flutter_bootstrap.js', { cache: 'no-store' })).text()).slice(0, 300));
   await wait(9000);
   await snap('landing');
+  // Can the live site reach the Internet Archive film catalogue (CORS)?
+  report.archive = await page.evaluate(async () => {
+    try {
+      const r = await fetch('https://archive.org/advancedsearch.php?q=collection%3A%28feature_films%29&fl%5B%5D=identifier&fl%5B%5D=title&rows=3&output=json&sort%5B%5D=downloads+desc');
+      const j = await r.json();
+      const id = j.response.docs[0].identifier;
+      const m = await (await fetch('https://archive.org/metadata/' + id)).json();
+      const mp4 = (m.files || []).filter(f => (f.name || '').endsWith('.mp4')).map(f => f.name + ' [' + f.format + ']');
+      return { ok: true, titles: j.response.docs.map(d => d.title), firstId: id, mp4: mp4.slice(0, 3) };
+    } catch (e) { return { ok: false, error: String(e) }; }
+  });
   await enableSemantics();
 
   step('tap Create our world');
