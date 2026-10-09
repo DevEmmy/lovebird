@@ -12,14 +12,33 @@ const report = { steps: [], console: { A: [], B: [] }, supabase: { A: [], B: [] 
 const step = (s) => { console.log('STEP', s); report.steps.push(s); };
 
 const browser = await chromium.launch({
-  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'],
+  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required', '--disable-features=WebRtcHideLocalIpsWithMdns'],
 });
 
 async function person(tag) {
   const ctx = await browser.newContext({ viewport: { width: 412, height: 860 }, locale: 'en-US', timezoneId: 'Africa/Lagos', permissions: ['camera', 'microphone'] });
+  await ctx.addInitScript(() => {
+    const Orig = window.RTCPeerConnection;
+    window.__rtc = [];
+    window.RTCPeerConnection = function (...a) {
+      const pc = new Orig(...a);
+      const rec = { conn: 'new', ice: 'new', sig: 'stable', cands: 0, remoteCands: 0, tracks: 0, log: [] };
+      window.__rtc.push(rec);
+      pc.addEventListener('connectionstatechange', () => { rec.conn = pc.connectionState; rec.log.push('conn:' + pc.connectionState); });
+      pc.addEventListener('iceconnectionstatechange', () => { rec.ice = pc.iceConnectionState; rec.log.push('ice:' + pc.iceConnectionState); });
+      pc.addEventListener('signalingstatechange', () => { rec.sig = pc.signalingState; rec.log.push('sig:' + pc.signalingState); });
+      pc.addEventListener('icecandidate', (e) => { if (e.candidate) { rec.cands++; rec.log.push('cand:' + e.candidate.candidate.split(' ').slice(4, 8).join(' ')); } });
+      pc.addEventListener('track', () => { rec.tracks++; });
+      const add = pc.addIceCandidate.bind(pc);
+      pc.addIceCandidate = (c, ...r) => { rec.remoteCands++; return add(c, ...r).catch((err) => { rec.log.push('addIce ERR ' + err); throw err; }); };
+      return pc;
+    };
+    window.RTCPeerConnection.prototype = Orig.prototype;
+    Object.setPrototypeOf(window.RTCPeerConnection, Orig);
+  });
   const page = await ctx.newPage();
   page.on('console', (m) => { if (m.type() === 'error') report.console[tag].push(m.text().slice(0, 300)); });
-  page.on('pageerror', (e) => report.console[tag].push('pageerror: ' + String(e).slice(0, 300)));
+  page.on('pageerror', (e) => report.console[tag].push('pageerror: ' + String(e.stack || e).slice(0, 1200)));
   page.on('response', async (r) => {
     if (r.url().includes('supabase.co') && r.status() >= 400) {
       let body = '';
@@ -162,12 +181,17 @@ try {
   report.bIncoming = (await text(B)).slice(0, 200);
   await snap(B, 'B-incoming-call');
   await tap(B, /^Accept$/i);
-  await wait(A, 9000);
+  await wait(A, 4000);
+  report.rtcEarlyA = await A.evaluate(() => window.__rtc);
+  report.rtcEarlyB = await B.evaluate(() => window.__rtc);
+  await wait(A, 12000);
   await semantics(A);
   await semantics(B);
   report.callA = (await text(A)).slice(0, 200);
   report.callB = (await text(B)).slice(0, 200);
   report.webrtc = await A.evaluate(() => ({ media: document.querySelectorAll('video,audio').length }));
+  report.rtcA = await A.evaluate(() => window.__rtc);
+  report.rtcB = await B.evaluate(() => window.__rtc);
   await snap(A, 'A-in-call');
   await snap(B, 'B-in-call');
   await tap(A, /^End$/i);
@@ -180,4 +204,4 @@ try {
 }
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 await browser.close();
-// rerun2 1791533584
+// rerun3 rtc-instrumented
