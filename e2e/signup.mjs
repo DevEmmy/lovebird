@@ -15,7 +15,7 @@ const step = (s) => { console.log('STEP', s); report.steps.push(s); };
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
 page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) report.console.push(`${m.type()}: ${m.text()}`.slice(0, 600)); });
-page.on('pageerror', (e) => report.console.push('pageerror: ' + String(e).slice(0, 600)));
+page.on('pageerror', (e) => report.console.push('pageerror: ' + String(e.stack || e).slice(0, 4000)));
 page.on('requestfailed', (r) => report.failedRequests.push(`${r.url().slice(0, 160)} ${r.failure()?.errorText}`));
 page.on('response', async (r) => {
   if (r.url().includes('supabase.co')) {
@@ -53,7 +53,9 @@ async function typeInto(labelRe, text) {
 
 try {
   step('open site');
-  await page.goto(BASE, { waitUntil: 'load', timeout: 60000 });
+  await page.goto(BASE + '?nocache=' + Date.now(), { waitUntil: 'load', timeout: 60000 });
+  report.navigatorLanguage = await page.evaluate(() => [navigator.language, navigator.languages]);
+  report.bootstrap = await page.evaluate(async () => (await (await fetch('flutter_bootstrap.js', { cache: 'no-store' })).text()).slice(0, 300));
   await wait(9000);
   await snap('landing');
   await enableSemantics();
