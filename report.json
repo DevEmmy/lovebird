@@ -1,0 +1,123 @@
+{
+  "steps": [
+    "A signs up",
+    "A creates circle",
+    "B signs up",
+    "B joins with code",
+    "A starts Tic-Tac-Love",
+    "B taps Join on the invite banner",
+    "A plays centre square",
+    "B plays a corner",
+    "Love Pong",
+    "Voice call: A calls B",
+    "done"
+  ],
+  "console": {
+    "A": [
+      "[call] <- accept (phase outgoing, pc false)",
+      "[call] <- answer (phase connecting, pc true)"
+    ],
+    "B": [
+      "[call] <- offer (phase connecting, pc true)",
+      "[call] <- end (phase connected, pc true)"
+    ]
+  },
+  "supabase": {
+    "A": [],
+    "B": []
+  },
+  "waitingText": "Profile\nSign out\nWaiting for your person…\nSend them this code. The moment they join, your Love Circle opens.\nCopy\nShare\nGet a new code\nCancel | Lovebird | Invitation code G C M B K P P 6\nExpires Monday, 9:47 AM · single use",
+  "code": "GCMBKPP6",
+  "homeA": "Lovebird\n1 unread notifications 1\nMercy & David. David is online. Mercy M David, online D\nMercy & David\nYour story starts today ❤️\nTogether Mode\nWhat should you two do?\n❤️ Chat\n🎬 Movie Night\n🎮 Play\n📖 Read Together\n📔 Our Diary\n📸 Memories\n💡 Date Ideas\n📝 Our Plans\nComing up\nDates\n🗓️ What should you two do next? Add your anniversary, birthdays or your next date.\nRecent memories\n📸 Your story s",
+  "homeB": "Lovebird\nNotifications\nDavid & Mercy. Mercy is online. David D Mercy, online M\nDavid & Mercy\nYour story starts today ❤️\nTogether Mode\nWhat should you two do?\n❤️ Chat\n🎬 Movie Night\n🎮 Play\n📖 Read Together\n📔 Our Diary\n📸 Memories\n💡 Date Ideas\n📝 Our Plans\nComing up\nDates\n🗓️ What should you two do next? Add your anniversary, birthdays or your next date.\nRecent memories\n📸 Your story starts here ",
+  "gameUrl": "https://devemmy.github.io/lovebird/#/game/9a25c6aa-c5f7-42ef-92e4-933c21f5044d",
+  "bInvite": false,
+  "ticB": "Back\n💘 Tic-Tac-Love\nMercy is here\n💜\nYou\nvs\n❤️\nMercy\n0\n0\nYour turn 💜\nEmpty square 1\nEmpty square 2\nEmpty square 3\nEmpty square 4\nMercy square 5 ❤️\nEmpty square 6\nEmpty square 7\nEmpty square 8\nEmpty square 9 | ",
+  "ticA": "Back\n💘 Tic-Tac-Love\nDavid is here\n❤️\nYou\nvs\n💜\nDavid\n0\n0\nYour turn ❤️\nDavid square 1 💜\nEmpty square 2\nEmpty square 3\nEmpty square 4\nYou square 5 ❤️\nEmpty square 6\nEmpty square 7\nEmpty square 8\nEmpty square 9 | ",
+  "bIncoming": "Lovebird\n2 unread notifications 2\nDavid & Mercy. Mercy is online. David D Mercy, online M\nDavid & Mercy\nYour story starts today ❤️\nTogether Mode\n🎮 Happening now 🏓 Love Pong Mercy started this\nWhat s",
+  "rtcEarlyA": [
+    {
+      "conn": "connected",
+      "ice": "connected",
+      "sig": "stable",
+      "cands": 3,
+      "remoteCands": 1,
+      "tracks": 1,
+      "log": [
+        "sig:have-local-offer",
+        "cand:10.1.1.165 55645 typ host",
+        "cand:10.1.1.165 9 typ host",
+        "cand:20.65.155.60 23638 typ srflx",
+        "ice:checking",
+        "conn:connecting",
+        "ice:connected",
+        "sig:stable",
+        "conn:connected"
+      ]
+    }
+  ],
+  "rtcEarlyB": [
+    {
+      "conn": "connected",
+      "ice": "connected",
+      "sig": "stable",
+      "cands": 1,
+      "remoteCands": 3,
+      "tracks": 1,
+      "log": [
+        "sig:have-remote-offer",
+        "sig:stable",
+        "ice:checking",
+        "cand:10.1.1.165 42733 typ host",
+        "ice:connected",
+        "conn:connecting",
+        "conn:connected"
+      ]
+    }
+  ],
+  "callA": "David, online D David online\nShow call\n💌\nSay hello ❤️\nThis chat is just for you two. Nobody else can ever read it.\nTake a photo\nSend a photo\nRecord a voice note\nMinimise\nMute\nSpeaker\nEnd | David\nD\nDa",
+  "callB": "Lovebird\n2 unread notifications 2\nDavid & Mercy. Mercy is online. David D Mercy, online M\nDavid & Mercy\nYour story starts today ❤️\nTogether Mode\n🎮 Happening now 🏓 Love Pong Mercy started this\nWhat s",
+  "webrtc": {
+    "media": 4
+  },
+  "rtcA": [
+    {
+      "conn": "connected",
+      "ice": "connected",
+      "sig": "stable",
+      "cands": 3,
+      "remoteCands": 1,
+      "tracks": 1,
+      "log": [
+        "sig:have-local-offer",
+        "cand:10.1.1.165 55645 typ host",
+        "cand:10.1.1.165 9 typ host",
+        "cand:20.65.155.60 23638 typ srflx",
+        "ice:checking",
+        "conn:connecting",
+        "ice:connected",
+        "sig:stable",
+        "conn:connected"
+      ]
+    }
+  ],
+  "rtcB": [
+    {
+      "conn": "connected",
+      "ice": "connected",
+      "sig": "stable",
+      "cands": 1,
+      "remoteCands": 3,
+      "tracks": 1,
+      "log": [
+        "sig:have-remote-offer",
+        "sig:stable",
+        "ice:checking",
+        "cand:10.1.1.165 42733 typ host",
+        "ice:connected",
+        "conn:connecting",
+        "conn:connected"
+      ]
+    }
+  ]
+}
