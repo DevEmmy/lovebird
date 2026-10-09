@@ -199,10 +199,6 @@ class CallManager extends ChangeNotifier {
   Future<void> _onSignal(Map<String, dynamic> m) async {
     final t = m['t'] as String?;
     final cid = m['cid'] as String?;
-    if (t != 'ice' && t != 'ring') {
-      // ignore: avoid_print
-      print('[call] <- $t (phase ${phase.name}, pc ${_pc != null})');
-    }
     switch (t) {
       case 'ring':
         if (phase == CallPhase.idle) {
